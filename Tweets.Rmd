@@ -68,7 +68,7 @@ tidy_tweets %>%
   coord_flip()
 ```
 
-There really isn't anything that scares me.  There is a word at the bottom that I don't really know the meaning of (I believe it is french). Now I want to do this again, but for each candidate:
+There really isn't anything that scares me.  There is a word at the bottom that I don't really know the meaning of. Now I want to do this again, but for each candidate:
 
 ```{r}
 tidy_tweets %>%
