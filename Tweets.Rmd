@@ -55,8 +55,8 @@ hashtags <- tidy_tweets %>%
 #write_csv(hashtags, "hashtags.csv")
 ```
 
-Now we can use the tidy tools to plot the most common words
 
+Now we can use the tidy tools to plot the most common words
 ```{r}
 tidy_tweets %>%
   count(word, sort = TRUE) %>%
@@ -80,5 +80,156 @@ tidy_tweets %>%
   geom_col() +
   xlab(NULL) +
   coord_flip() +
-  facet_wrap(~ Candidate, scales = "free_y") 
+  facet_wrap(~ Candidate, scales = "free") 
+
+ggsave("Most Common Words.jpeg")
 ```
+
+
+
+## January 21, 2019
+
+I am looking at Rebekah's work on the hashtags.  It is a great step forward by taking out the hashtags and removing the weird characters that sometimes occur, one potential problem I see is that many of the hastags are not separated into individual words ("borderwall").  The reason this does not work for sentiment analysis is because the sentiment analysis dictionary looks for exact matches.  So if the dictionary sees "borderwall" it will come back as not having a match when in reality it should be matched with "border" and "wall".  Now this might not be the most important because the hashtags are found in the raw count for each individual (the figure right above), and they might not even have a sentiment tied to the words.  I am going to try to see what can be done with what we currently have.
+
+### Taking out the hashtags
+
+This takes out the actual "#" but keeps the words together.  This will at least partially fix the problem.
+```{r}
+tidy_tweets$word <- str_replace(tidy_tweets$word, "#", "")
+```
+
+```{r}
+sentiments <- tidy_tweets %>%
+  left_join(get_sentiments("bing"), by = "word")
+
+sentiments$positive <- ifelse(sentiments$sentiment == "positive", 1, 0)
+sentiments$negative <- ifelse(sentiments$sentiment == "negative", 1, 0)
+
+sentiments %>%
+  group_by(Candidate, word) %>%
+  summarise(positive = sum(positive),
+            negative = sum(negative)) %>%
+  filter(word != "trump") %>% # trump is listed as positive, so I took it out
+  top_n(10, positive) %>%
+  mutate(word = reorder(word, positive)) %>%
+  ggplot(aes(word, positive, fill = Candidate)) +
+  geom_col() +
+  xlab(NULL) +
+  coord_flip() +
+  facet_wrap(~ Candidate, scales = "free") +
+  ggtitle("Most Common Positive Words by Candidate")
+
+ggsave("Most Common Positive Words.jpeg")
+```
+
+```{r}
+sentiments %>%
+  group_by(Candidate, word) %>%
+  summarise(positive = sum(positive),
+            negative = sum(negative)) %>%
+  filter(word != "trump") %>% # trump is listed as positive, so I took it out
+  top_n(10, negative) %>%
+  mutate(word = reorder(word, negative)) %>%
+  ggplot(aes(word, negative, fill = Candidate)) +
+  geom_col() +
+  xlab(NULL) +
+  coord_flip() +
+  facet_wrap(~ Candidate, scales = "free") +
+  ggtitle("Most Common Negative Words by Candidate")
+
+ggsave("Most Common Negative Words.jpeg")
+
+```
+
+```{r}
+sentiments %>%
+  group_by(Candidate, word) %>%
+  summarise(positive = sum(positive),
+            negative = sum(negative)) %>%
+  arrange(desc(positive)) %>%
+  ungroup() %>%
+  filter(!str_detect(word, "trump")) %>%
+  group_by(Candidate) %>%
+  mutate(sentiment_score = positive - negative) %>%
+  filter(!is.na(sentiment_score)) %>%
+  summarise(total = sum(sentiment_score))
+```
+
+Trump was by far more negative than Clinton whereas Macron was about the same as Le Pen, but this is likely due to the nature of the unigram analysis and the influence of the translation.
+
+### Frequencies
+
+Now let's caculate word frequencies for each person.  First, we group by person and count how many times each person used each word.  Then use `left_join()` to add a column of the totla number of words used by each person.  Finally we calculate a frequency for each person and word.
+
+```{r}
+frequency <- tidy_tweets %>%
+  group_by(Candidate) %>%
+  filter(!str_detect(word, "^@")) %>%
+  count(word, sort = TRUE) %>%
+  left_join(tidy_tweets %>%
+              group_by(Candidate) %>%
+              summarise(total = n())) %>%
+  mutate(freq = n/total)
+
+frequency
+```
+
+
+In order to plot the information learned above we use use the `spread()` function to make a differently shaped data frame:
+
+```{r}
+frequency <- frequency %>%
+  select(Candidate, word, freq) %>%
+  spread(Candidate, freq) %>%
+  arrange(Clinton, Trump, Macron, `Le Pen`)
+
+frequency
+```
+
+```{r}
+library(scales)
+
+ggplot(frequency, aes(Clinton, Trump)) +
+  geom_jitter(alpha = 0.1, size = 2.5, width = .25, height = 0.25) +
+  geom_text(aes(label = word), check_overlap = TRUE, vjust = 1.5) +
+  scale_x_log10(labels = percent_format()) +
+  scale_y_log10(labels = percent_format()) +
+  geom_abline(color = "red")
+
+ggsave("Frequency Alignment.jpeg")
+```
+
+```{r}
+ggplot(frequency, aes(`Le Pen`, Macron)) +
+  geom_jitter(alpha = 0.1, size = 2.5, width = .25, height = 0.25) +
+  geom_text(aes(label = word), check_overlap = TRUE, vjust = 1.5) +
+  scale_x_log10(labels = percent_format()) +
+  scale_y_log10(labels = percent_format()) +
+  geom_abline(color = "red")
+
+ggsave("Frequency Alignment France.jpeg")
+```
+
+Words near the line are used with about equal frequencies by both individuals.  While words far away from the line are used much more by one person compared to the other.  Words, hashtags, and usernames that appear in this plot are ones that have been used by both individuals at least once in a tweet.
+
+## Side research not to be included in final:
+
+The charts above got me asking: how often did the candidate reference the other person?
+```{r}
+trump <- tidy_tweets %>%
+  filter(str_detect(word, "^trump"))
+
+table(trump$Candidate)
+
+hillary <- tidy_tweets %>%
+  filter(str_detect(word, "^hillary"))
+table(hillary$Candidate)
+
+
+table(tweets$Candidate)
+```
+
+I thought the second to last one was interesting so I wanted to quickly check the usage, and found that Clinton has the most tweets (by far) of any candidate.  This is why we are getting the outcome above.  Can't probably use this in a report.
+
+
+
