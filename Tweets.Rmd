@@ -212,6 +212,35 @@ ggsave("Frequency Alignment France.jpeg")
 
 Words near the line are used with about equal frequencies by both individuals.  While words far away from the line are used much more by one person compared to the other.  Words, hashtags, and usernames that appear in this plot are ones that have been used by both individuals at least once in a tweet.
 
+
+## Revisions for R&R
+
+```{r}
+words <- c("Trump", "Donald", "Vote", "Make", "President", "Women", "Just", 
+           "Election", "POTUS")
+n_mentions <- c(319, 163, 144, 109, 108, 79, 88, 82, 72)
+
+cbind(words, as.numeric(n_mentions)) %>%
+  as_tibble() %>%
+  mutate(words = fct_reorder(words, desc(n_mentions))) %>%
+  ggplot(aes(x = words, y = n_mentions)) +
+  geom_col() +
+  labs(x = "", y = "",
+       title = "Figure 1: Frequency of Key Words - \nClinton 2016",
+       caption = "N = 484") +
+  coord_flip() +
+  geom_text(aes(label = n_mentions), hjust = -0.3) +
+  theme_light() +
+  theme(panel.grid.minor = element_blank(),
+        panel.grid.major.y = element_blank(),
+        plot.title = element_text(face = "bold", size = 14, hjust = 0.5),
+        plot.caption = element_text(size = 11, hjust = 0.5)) +
+  scale_y_continuous(breaks = seq(0, 350, 50), labels = c("0", "50", "100", "150", "200",
+                                                          "250", "300", "350"), limits = c(0, 350)) 
+```
+
+
+
 ## Side research not to be included in final:
 
 The charts above got me asking: how often did the candidate reference the other person?
