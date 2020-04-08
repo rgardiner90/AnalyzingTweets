@@ -244,9 +244,12 @@ cbind(words, as.numeric(n_mentions)) %>%
   theme(panel.grid.minor = element_blank(),
         panel.grid.major.y = element_blank(),
         plot.title = element_text(face = "bold", size = 14, hjust = 0.5),
-        plot.caption = element_text(size = 11, hjust = 0.5)) +
+        plot.caption = element_text(size = 11, hjust = 0.5),
+        axis.ticks = element_blank()) +
   scale_y_continuous(breaks = seq(0, 350, 50), labels = c("0", "50", "100", "150", "200",
                                                           "250", "300", "350"), limits = c(0, 350)) 
+
+ggsave("figure 1.png")
 ```
 
 ```{r}
@@ -268,22 +271,104 @@ cbind(words2, as.numeric(n_mentions2)) %>%
   theme(panel.grid.minor = element_blank(),
         panel.grid.major.y = element_blank(),
         plot.title = element_text(face = "bold", size = 14, hjust = 0.5),
-        plot.caption = element_text(size = 11, hjust = 0.5)) +
+        plot.caption = element_text(size = 11, hjust = 0.5),
+        axis.ticks = element_blank()) +
   scale_y_continuous(breaks = seq(0, 100, 10), limits = c(0, 105)) 
+
+ggsave("figure 2.png")
 ```
 
 
+```{r}
+values3 <- c("", "NF Policy", "  ", "Negative Macron", "     ", "Nationalism", 
+             "       ","EU, Anti Globalization", "         ", 
+             "Anti - Islam/Islam Terror", "           ", "ChoisirlaFrance", 
+             "             ", "Macron")
+number3 <- c(26, 35, 37, 61, 34, 44, 55, 49, 54, 20, 48, 51, 82, 172)
+reordering <- c(1:14)
 
+cbind(values3, number3, reordering) %>%
+  as_tibble() %>%
+  mutate(number3 = as.numeric(number3),
+         reordering = as.numeric(reordering),
+         values3 = fct_reorder(values3, desc(reordering))) %>%
+  ggplot(aes(x = values3, y = number3)) +
+  geom_col() +
+  geom_text(aes(label = number3), hjust = -0.3) +
+  coord_flip() +
+  theme_light() +
+  labs(x = NULL, y = NULL,
+       title = "Figure 3: Frequency of Key Words - Marine Le Pen \n2017",
+       caption = "N = 499") +
+  theme(panel.grid.minor = element_blank(),
+        panel.grid.major.y = element_blank(),
+        plot.title = element_text(face = "bold", size = 14, hjust = 0.5),
+        plot.caption = element_text(size = 11, hjust = 0.5),
+        axis.ticks = element_blank()) +
+  ylim(0, 200)
 
-CAN'T DO Figures 3 and 4
+ggsave("figure 3.png")
+```
+
+```{r}
+cbind(values3, number3, reordering) %>%
+  as_tibble() %>%
+  mutate(number3 = as.numeric(number3),
+         reordering = as.numeric(reordering),
+         values3 = fct_reorder(values3, desc(number3))) %>%
+  ggplot(aes(x = values3, y = number3)) +
+  geom_col() +
+  geom_text(aes(label = number3), hjust = -0.3) +
+  coord_flip() +
+  theme_light() +
+  labs(x = NULL, y = NULL,
+       title = "Figure 3 (ATTEMPT 2): Frequency of Key Words - Marine Le Pen \n2017",
+       caption = "N = 499") +
+  theme(panel.grid.minor = element_blank(),
+        panel.grid.major.y = element_blank(),
+        plot.title = element_text(face = "bold", size = 14, hjust = 0.5),
+        plot.caption = element_text(size = 11, hjust = 0.5),
+        axis.ticks = element_blank()) +
+  ylim(0, 200)
+
+ggsave("figure 3 (ATTEMPT2.png")
+```
 
 
 
 ```{r}
-tidy_tweets %>%
-  filter(Candidate == "Le Pen") %>%
-  count(word, sort = TRUE)
+values4 <- c("Islan, Islamism", "  ", "Terrorism", "    ", "Youth, Education, Employment", 
+             "      ", "Domestic Values","        ", "France Heritage", 
+             "          ", "Government Reform", "            ", 
+             "Economic & Social Policies")
+number4 <- c(4, 11, 16, 20, 27, 27, 28, 30, 39, 53, 57, 74, 191)
+reordering4 <- c(1:13)
+
+cbind(values4, number4, reordering4) %>%
+  as_tibble() %>%
+  mutate(number4 = as.numeric(number4),
+         reordering4 = as.numeric(reordering4),
+         values4 = fct_reorder(values4, desc(reordering4))) %>%
+  ggplot(aes(x = values4, y = number4)) +
+  geom_col() +
+  geom_text(aes(label = number4), hjust = -0.3) +
+  coord_flip() +
+  theme_light() +
+  labs(x = NULL, y = NULL,
+       title = "Figure 4: Frequency of Key Words - Macron\n2017",
+       caption = "N = 703") +
+  theme(panel.grid.minor = element_blank(),
+        panel.grid.major.y = element_blank(),
+        plot.title = element_text(face = "bold", size = 14, hjust = 0.5),
+        plot.caption = element_text(size = 11, hjust = 0.5),
+        axis.ticks = element_blank()) +
+  ylim(0, 250)
+
+ggsave("figure 4.png")
 ```
+
+
+
 
 
 ```{r}
@@ -315,6 +400,61 @@ ggplot(frequency, aes(`Le Pen`, Macron)) +
 ggsave("Figure 6.png")
 ```
 
+```{r}
+sentiments %>%
+  filter(Candidate %in% c("Clinton", "Trump"),
+         word != "trump") %>%
+  group_by(Candidate, word) %>%
+  summarise(positive = sum(positive),
+            negative = sum(negative)) %>%
+  top_n(10, positive) %>%
+  ungroup() %>%
+  mutate(word = reorder_within(word, desc(positive), Candidate)) %>%
+  ggplot(aes(x = word, y = positive, fill = Candidate)) +
+  geom_col(show.legend = FALSE) +
+  coord_flip() +
+  scale_x_reordered() +
+  scale_fill_manual(values = c("red2", "blue2")) +
+  facet_wrap(~ Candidate, scales = "free_y") +
+  labs(x = NULL, y = NULL,
+       title = "Figure 7: Positive Framing, American Candidates") +
+  theme_light() +
+  theme(panel.grid.minor = element_blank(),
+        panel.grid.major.y = element_blank(),
+        plot.title = element_text(face = "bold", size = 14, hjust = 0.5),
+        plot.caption = element_text(size = 11, hjust = 0.5)) 
+
+ggsave("figure 7.png")
+```
+
+
+```{r}
+sentiments %>%
+  filter(Candidate %in% c("Clinton", "Trump")) %>%
+  group_by(Candidate, word) %>%
+  summarise(positive = sum(positive),
+            negative = sum(negative)) %>%
+  top_n(10, negative) %>%
+  ungroup() %>%
+  mutate(word = reorder_within(word, desc(negative), Candidate)) %>%
+  ggplot(aes(x = word, y = negative, fill = Candidate)) +
+  geom_col(show.legend = FALSE) +
+  coord_flip() +
+  scale_x_reordered() +
+  scale_fill_manual(values = c("red2", "blue2")) +
+  facet_wrap(~ Candidate, scales = "free_y") +
+  labs(x = NULL, y = NULL,
+       title = "Figure 8: Negative Framing, American Candidates") +
+  theme_light() +
+  theme(panel.grid.minor = element_blank(),
+        panel.grid.major.y = element_blank(),
+        plot.title = element_text(face = "bold", size = 14, hjust = 0.5),
+        plot.caption = element_text(size = 11, hjust = 0.5)) 
+
+ggsave("figure 8.png")
+```
+
+
 
 ```{r}
 sentiments %>%
@@ -326,10 +466,10 @@ sentiments %>%
   ungroup() %>%
   mutate(word = reorder_within(word, desc(positive), Candidate)) %>%
   ggplot(aes(x = word, y = positive, fill = Candidate)) +
-  geom_col() +
+  geom_col(show.legend = FALSE) +
   coord_flip() +
   scale_x_reordered() +
-  facet_wrap(~ Candidate, scales = "free") +
+  facet_wrap(~ Candidate, scales = "free_y") +
   labs(x = NULL, y = NULL,
        title = "Figure 9: Positive Framing, French Candidates") +
   theme_light() +
@@ -337,11 +477,36 @@ sentiments %>%
         panel.grid.major.y = element_blank(),
         plot.title = element_text(face = "bold", size = 14, hjust = 0.5),
         plot.caption = element_text(size = 11, hjust = 0.5)) 
+
+ggsave("figure 9.png")
 ```
 
+```{r}
+sentiments %>%
+  filter(Candidate %in% c("Macron", "Le Pen")) %>%
+  group_by(Candidate, word) %>%
+  summarise(positive = sum(positive),
+            negative = sum(negative)) %>%
+  top_n(10, negative) %>%
+  ungroup() %>%
+  mutate(word = reorder_within(word, desc(negative), Candidate)) %>%
+  ggplot(aes(x = word, y = negative, fill = Candidate)) +
+  geom_col(show.legend = FALSE) +
+  coord_flip() +
+  scale_x_reordered() +
+  facet_wrap(~ Candidate, scales = "free_y") +
+  labs(x = NULL, y = NULL,
+       title = "Figure 10: Negative Framing, French Candidates") +
+  theme_light() +
+  theme(panel.grid.minor = element_blank(),
+        panel.grid.major.y = element_blank(),
+        plot.title = element_text(face = "bold", size = 14, hjust = 0.5),
+        plot.caption = element_text(size = 11, hjust = 0.5)) +
+  scale_y_continuous(breaks = c(0, 2, 4, 6, 8, 10))
 
+ggsave("figure 10.png")
+```
 
-HERE: DO FIGURE 10
 
 ## Side research not to be included in final:
 
