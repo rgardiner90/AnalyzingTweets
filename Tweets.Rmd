@@ -508,6 +508,15 @@ ggsave("figure 10.png")
 ```
 
 
+### New Research
+
+
+
+
+
+
+
+
 ## Side research not to be included in final:
 
 The charts above got me asking: how often did the candidate reference the other person?
