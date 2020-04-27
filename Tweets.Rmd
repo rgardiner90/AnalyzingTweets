@@ -538,3 +538,72 @@ I thought the second to last one was interesting so I wanted to quickly check th
 
 
 
+### Looking at different dictionaries
+
+```{r}
+afinn_sentiments <- tidy_tweets %>%
+  left_join(get_sentiments("afinn"), by = "word") %>%
+  filter(!is.na(value))
+
+afinn_sentiments %>%
+  group_by(Candidate, word, value) %>%
+  count(word) %>%
+  mutate(impact = value * n) %>%
+  ungroup() %>%
+  group_by(Candidate) %>%
+  top_n(n = 10, wt = abs(impact)) %>%
+  ungroup() %>%
+  mutate(word = reorder_within(word, impact, Candidate)) %>%
+  ggplot(aes(word, impact, fill = Candidate)) +
+  geom_col() +
+  xlab(NULL) +
+  coord_flip() +
+  scale_x_reordered() +
+  facet_wrap(~ Candidate, scales = "free") +
+  ggtitle("Most Impactful Words by Candidate")
+
+ggsave("afinn most impactful.png")
+```
+
+```{r}
+afinn_sentiments %>%
+  group_by(Candidate, word, value) %>%
+  count(word) %>%
+  mutate(impact = value * n) %>%
+  ungroup() %>%
+  group_by(Candidate) %>%
+  top_n(n = 10, wt = impact) %>%
+  ungroup() %>%
+  mutate(word = reorder_within(word, impact, Candidate)) %>%
+  ggplot(aes(word, impact, fill = Candidate)) +
+  geom_col() +
+  xlab(NULL) +
+  coord_flip() +
+  scale_x_reordered() +
+  facet_wrap(~ Candidate, scales = "free") +
+  ggtitle("Most Impactful Positive Words by Candidate")
+
+ggsave("afinn most impactful positive.png")
+```
+
+```{r}
+afinn_sentiments %>%
+  group_by(Candidate, word, value) %>%
+  count(word) %>%
+  mutate(impact = value * n) %>%
+  ungroup() %>%
+  group_by(Candidate) %>%
+  top_n(n = 10, wt = -impact) %>%
+  ungroup() %>%
+  mutate(word = reorder_within(word, impact, Candidate)) %>%
+  ggplot(aes(word, impact, fill = Candidate)) +
+  geom_col() +
+  xlab(NULL) +
+  coord_flip() +
+  scale_x_reordered() +
+  facet_wrap(~ Candidate, scales = "free") +
+  ggtitle("Most Impactful Negative Words by Candidate")
+
+ggsave("afinn most impactful negative.png")
+```
+
