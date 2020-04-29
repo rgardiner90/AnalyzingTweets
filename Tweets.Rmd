@@ -542,13 +542,145 @@ I thought the second to last one was interesting so I wanted to quickly check th
 
 
 
-### Looking at different dictionaries
+
+### Re-doing figures 7-10 based on afinn
+
 
 ```{r}
 afinn_sentiments <- tidy_tweets %>%
   left_join(get_sentiments("afinn"), by = "word") %>%
   filter(!is.na(value))
+```
 
+
+
+
+
+
+
+
+```{r}
+afinn_sentiments %>%
+  filter(Candidate %in% c("Trump", "Clinton")) %>%
+  group_by(Candidate, word, value) %>%
+  count(word) %>%
+  mutate(impact = value * n) %>%
+  ungroup() %>%
+  group_by(Candidate) %>%
+  top_n(n = 10, wt = impact) %>%
+  ungroup() %>%
+  mutate(word = reorder_within(word, impact, Candidate)) %>%
+  ggplot(aes(word, impact, fill = Candidate)) +
+  geom_col(show.legend = FALSE) +
+  xlab(NULL) +
+  labs(y = "Impact") +
+  coord_flip() +
+  scale_x_reordered() +
+  facet_wrap(~ Candidate, scales = "free") +
+  ggtitle("Figure 7: Most Strongly Empahsized Positive Words \nAmerican Candidates") +
+  theme_light() +
+  theme(panel.grid.minor = element_blank(),
+        panel.grid.major.y = element_blank(),
+        plot.title = element_text(face = "bold", size = 14, hjust = 0.5),
+        plot.caption = element_text(size = 11, hjust = 0.5),
+        axis.ticks = element_blank()) 
+
+ggsave("Figure 7 - afinn dictionary.png")
+```
+
+```{r}
+afinn_sentiments %>%
+  filter(Candidate %in% c("Trump", "Clinton")) %>%
+  group_by(Candidate, word, value) %>%
+  count(word) %>%
+  mutate(impact = value * n) %>%
+  ungroup() %>%
+  group_by(Candidate) %>%
+  top_n(n = 10, wt = -impact) %>%
+  ungroup() %>%
+  mutate(word = reorder_within(word, impact, Candidate)) %>%
+  ggplot(aes(word, impact, fill = Candidate)) +
+  geom_col(show.legend = FALSE) +
+  xlab(NULL) +
+  labs(y = "Impact") +
+  coord_flip() +
+  scale_x_reordered() +
+  facet_wrap(~ Candidate, scales = "free") +
+  ggtitle("Figure 8: Most Strongly Empahsized Negative Words \nAmerican Candidates") +
+  theme_light() +
+  theme(panel.grid.minor = element_blank(),
+        panel.grid.major.y = element_blank(),
+        plot.title = element_text(face = "bold", size = 14, hjust = 0.5),
+        plot.caption = element_text(size = 11, hjust = 0.5),
+        axis.ticks = element_blank()) 
+
+ggsave("Figure 8 - afinn dictionary.png")
+```
+
+
+```{r}
+afinn_sentiments %>%
+  filter(Candidate %in% c("Macron", "Le Pen")) %>%
+  group_by(Candidate, word, value) %>%
+  count(word) %>%
+  mutate(impact = value * n) %>%
+  ungroup() %>%
+  group_by(Candidate) %>%
+  top_n(n = 10, wt = impact) %>%
+  ungroup() %>%
+  mutate(word = reorder_within(word, impact, Candidate)) %>%
+  ggplot(aes(word, impact, fill = Candidate)) +
+  geom_col(show.legend = FALSE) +
+  xlab(NULL) +
+  coord_flip() +
+  scale_x_reordered() +
+  facet_wrap(~ Candidate, scales = "free") +
+  ggtitle("Figure 9: Most Strongly Empahsized Positive Words \nFrench Candidates") +
+  theme_light() +
+  theme(panel.grid.minor = element_blank(),
+        panel.grid.major.y = element_blank(),
+        plot.title = element_text(face = "bold", size = 14, hjust = 0.5),
+        plot.caption = element_text(size = 11, hjust = 0.5),
+        axis.ticks = element_blank()) +
+  scale_fill_manual(values = c("#9999CC", "#66CC99"))
+
+ggsave("Figure 9 - afinn dictionary.png")
+```
+
+
+```{r}
+afinn_sentiments %>%
+  filter(Candidate %in% c("Macron", "Le Pen")) %>%
+  group_by(Candidate, word, value) %>%
+  count(word) %>%
+  mutate(impact = value * n) %>%
+  ungroup() %>%
+  group_by(Candidate) %>%
+  top_n(n = 10, wt = -impact) %>%
+  ungroup() %>%
+  mutate(word = reorder_within(word, impact, Candidate)) %>%
+  ggplot(aes(word, impact, fill = Candidate)) +
+  geom_col(show.legend = FALSE) +
+  xlab(NULL) +
+  coord_flip() +
+  scale_x_reordered() +
+  facet_wrap(~ Candidate, scales = "free") +
+  ggtitle("Figure 10: Most Strongly Empahsized Negative Words \nFrench Candidates") +
+  theme_light() +
+  theme(panel.grid.minor = element_blank(),
+        panel.grid.major.y = element_blank(),
+        plot.title = element_text(face = "bold", size = 14, hjust = 0.5),
+        plot.caption = element_text(size = 11, hjust = 0.5),
+        axis.ticks = element_blank()) +
+  scale_fill_manual(values = c("#9999CC", "#66CC99"))
+  
+ggsave("Figure 10 - afinn dictionary.png")
+```
+
+
+
+
+```{r}
 afinn_sentiments %>%
   group_by(Candidate, word, value) %>%
   count(word) %>%
@@ -569,45 +701,4 @@ afinn_sentiments %>%
 # ggsave("afinn most impactful.png")
 ```
 
-```{r}
-afinn_sentiments %>%
-  group_by(Candidate, word, value) %>%
-  count(word) %>%
-  mutate(impact = value * n) %>%
-  ungroup() %>%
-  group_by(Candidate) %>%
-  top_n(n = 10, wt = impact) %>%
-  ungroup() %>%
-  mutate(word = reorder_within(word, impact, Candidate)) %>%
-  ggplot(aes(word, impact, fill = Candidate)) +
-  geom_col() +
-  xlab(NULL) +
-  coord_flip() +
-  scale_x_reordered() +
-  facet_wrap(~ Candidate, scales = "free") +
-  ggtitle("Most Impactful Positive Words by Candidate")
-
-# ggsave("afinn most impactful positive.png")
-```
-
-```{r}
-afinn_sentiments %>%
-  group_by(Candidate, word, value) %>%
-  count(word) %>%
-  mutate(impact = value * n) %>%
-  ungroup() %>%
-  group_by(Candidate) %>%
-  top_n(n = 10, wt = -impact) %>%
-  ungroup() %>%
-  mutate(word = reorder_within(word, impact, Candidate)) %>%
-  ggplot(aes(word, impact, fill = Candidate)) +
-  geom_col() +
-  xlab(NULL) +
-  coord_flip() +
-  scale_x_reordered() +
-  facet_wrap(~ Candidate, scales = "free") +
-  ggtitle("Most Impactful Negative Words by Candidate")
-
-# ggsave("afinn most impactful negative.png")
-```
 
