@@ -701,4 +701,9 @@ afinn_sentiments %>%
 # ggsave("afinn most impactful.png")
 ```
 
+```{r}
+afinn_sentiments %>%
+  filter(value < 0) %>%
+  distinct(word, value)
+```
 
