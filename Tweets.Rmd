@@ -707,3 +707,46 @@ afinn_sentiments %>%
   distinct(word, value)
 ```
 
+### overall sentiment of tweets
+
+```{r}
+afinn_sentiments %>%
+  group_by(Tweet, Candidate) %>%
+  summarise(net_value = sum(value),
+            number_words = ) 
+
+afinn_sentiments_zeroes <- tidy_tweets %>%
+  left_join(get_sentiments("afinn"), by = "word") %>%
+  mutate(text = str_remove_all(Tweet, remove_reg)) %>%
+  filter(!word %in% stop_words$word,
+         !word %in% str_remove_all(stop_words$word, "'"),
+         str_detect(word, "[a-z]"),
+         !word %in% c("rt"),
+         !str_detect(word, "@|http|â|[:number:]|ð")) 
+
+afinn_sentiments_zeroes %>%
+  group_by(Tweet, Candidate) %>%
+  mutate(value = ifelse(is.na(value), 0 ,value)) %>%
+  summarise(net_value = sum(value),
+            number_words = n()) %>%
+  ungroup() %>%
+  group_by(Candidate) %>%
+  summarise(average_net_value = mean(net_value),
+            average_words = mean(number_words)) %>%
+  mutate(Candidate = fct_reorder(Candidate, average_net_value)) %>%
+  ggplot(aes(x = Candidate, y = average_net_value)) +
+  geom_col() +
+  labs(x = "", y = "Average Net Sentiment of a Tweet",
+       title = "Average Net Sentiment of a Tweet by Candidate",
+       subtitle = "Lower Values Indicate More Negative Speech") +
+  coord_flip() +
+  theme_light() +
+  theme(panel.grid.minor = element_blank(),
+        panel.grid.major.y = element_blank(),
+        plot.title = element_text(face = "bold", size = 14, hjust = 0.5),
+        plot.caption = element_text(size = 11, hjust = 0.5),
+        axis.ticks = element_blank()) 
+
+# ggsave("average tweet sentiment.png")
+```
+
