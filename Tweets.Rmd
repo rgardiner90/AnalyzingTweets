@@ -749,6 +749,73 @@ afinn_sentiments_zeroes %>%
 # ggsave("average tweet sentiment.png")
 ```
 
+## Looking at the most common hashtags by each candidate
+
+```{r}
+hashtags <- tweets %>%
+  mutate(tweet_id = row_number()) %>%
+  mutate(text = str_remove_all(Tweet, remove_reg)) %>%
+  unnest_tokens(word, text, token = "tweets") %>%
+  filter(str_detect(word, "#"))
+  
+hashtags %>%
+  count(Candidate, word) %>%
+  group_by(Candidate) %>%
+  top_n(10, n) %>%
+  ungroup() %>%
+  mutate(word = reorder_within(word, n, Candidate)) %>%
+  ggplot(aes(x = word, y = n, fill = Candidate)) +
+  geom_col(show.legend = FALSE) +
+  scale_x_reordered() +
+  facet_wrap(~ Candidate, scales = "free_y") +
+  coord_flip() +
+  labs(x = "", y = "Number of Mentions",
+       title = "Most Common Hashtags Used")
+
+ggsave("hashtags_general.png")
+
+hashtags %>%
+  filter(rt == TRUE) %>%
+  count(Candidate, word) %>%
+  group_by(Candidate) %>%
+  top_n(10, n) %>%
+  ungroup() %>%
+  mutate(word = reorder_within(word, n, Candidate)) %>%
+  ggplot(aes(x = word, y = n, fill = Candidate)) +
+  geom_col(show.legend = FALSE) +
+  scale_x_reordered() +
+  facet_wrap(~ Candidate, scales = "free_y") +
+  coord_flip() +
+  labs(x = "", y = "Number of Mentions",
+       title = "Most Common Retweeted Hashtags")
+
+ggsave("hashtags_retweets.png")
+
+hashtags %>%
+  filter(rt == FALSE) %>%
+  count(Candidate, word) %>%
+  group_by(Candidate) %>%
+  top_n(10, n) %>%
+  filter(n > 1) %>%
+  ungroup() %>%
+  mutate(word = reorder_within(word, n, Candidate)) %>%
+  ggplot(aes(x = word, y = n, fill = Candidate)) +
+  geom_col(show.legend = FALSE) +
+  scale_x_reordered() +
+  facet_wrap(~ Candidate, scales = "free_y") +
+  coord_flip() +
+  labs(x = "", y = "Number of Mentions",
+       title = "Most Common Hashtags (Not Retweeted)")
+
+ggsave("hashtags_original.png")
+```
+
+
+
+
+
+
+
 ## Topic Model
 
 ```{r}
@@ -763,7 +830,10 @@ word_counts <- tweets %>%
   unnest_tokens(word, text, token = "tweets") %>%
   filter(!word %in% stop_words$word,
          !word %in% str_remove_all(stop_words$word, "'"),
-         str_detect(word, "[a-z]")) %>%
+         str_detect(word, "[a-z]"),
+         !str_detect(word, "[:digit:]"),
+         !str_detect(word, "u0080"),
+         !str_detect(word, "http")) %>%
   count(tweet_id, word, sort = TRUE) 
 
 tweet_dfm <- word_counts %>%
@@ -823,26 +893,9 @@ gamma_eval <- function(topicModel) {
 
 gamma_eval(topic_model_6)
 gamma_eval(topic_model_12)
+gamma_eval(topic_model_16)
+gamma_eval(topic_model_20)
+gamma_eval(topic_model_24)
 ```
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
