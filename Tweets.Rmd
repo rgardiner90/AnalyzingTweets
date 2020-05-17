@@ -841,6 +841,7 @@ tweet_dfm <- word_counts %>%
 ```
 
 ```{r}
+topic_model_4 <- stm(tweet_dfm, K = 4, init.type = "Spectral")
 topic_model_6 <- stm(tweet_dfm, K = 6, init.type = "Spectral")
 topic_model_12 <- stm(tweet_dfm, K = 12, init.type = "Spectral")
 topic_model_16 <- stm(tweet_dfm, K = 16, init.type = "Spectral")
@@ -873,8 +874,12 @@ beta_eval <- function(topicModel) {
 6 topic model: nothing of interest
 12 topic model: this seems to be doing better. The first topic seems primarily about US election (similar to topics 3, 6, 8). Second topic about somewhat about taxes. Topic 7 appears to be about debates and VPs. Really interested in topic 12 which seems more focused on issues (especially family, trust, etc).
 ```{r}
+beta_eval(topic_model_4)
 beta_eval(topic_model_6) 
 beta_eval(topic_model_12)
+beta_eval(topic_model_16)
+beta_eval(topic_model_20)
+beta_eval(topic_model_24)
 ```
 
 ### Gamma evaluation
@@ -891,6 +896,7 @@ gamma_eval <- function(topicModel) {
 
   }
 
+gamma_eval(topic_model_4)
 gamma_eval(topic_model_6)
 gamma_eval(topic_model_12)
 gamma_eval(topic_model_16)
@@ -898,4 +904,8 @@ gamma_eval(topic_model_20)
 gamma_eval(topic_model_24)
 ```
 
+#### Next Steps
 
+1. Use the functions to figure out which model performs the best (probably using the gamma distribution then using the beta). 
+2. Once a model has been decided, you need to create a graphic or table that shows the words have the largest (and maybe smallest) betas for each topic. Try to define them in simple terms.
+3. Then use the gamma distribution to give a probability that a given tweet fits within a topic. Do either a mean and make a point estimate for each candidate per topic and then plot each one (the topic on the y axis, the score on the x, and color for the candidate). You can do that, or instead of computing a mean/median, you could do a boxplot for each candidate.  
