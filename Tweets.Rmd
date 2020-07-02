@@ -16,6 +16,8 @@ library(readxl)
 library(tidyverse)
 library(tidytext)
 library(stringr)
+library(stm)
+library(quanteda)
 ```
 
 loading the data:
@@ -561,7 +563,6 @@ afinn_sentiments <- tidy_tweets %>%
 
 ```{r}
 afinn_sentiments %>%
-  filter(Candidate %in% c("Trump", "Clinton")) %>%
   group_by(Candidate, word, value) %>%
   count(word) %>%
   mutate(impact = value * n) %>%
@@ -577,7 +578,7 @@ afinn_sentiments %>%
   coord_flip() +
   scale_x_reordered() +
   facet_wrap(~ Candidate, scales = "free") +
-  ggtitle("Figure 7: Most Strongly Empahsized Positive Words \nAmerican Candidates") +
+  ggtitle("Figure 7: Most Strongly Empahsized Positive Words by Candidate") +
   theme_light() +
   theme(panel.grid.minor = element_blank(),
         panel.grid.major.y = element_blank(),
@@ -590,7 +591,6 @@ ggsave("Figure 7 - afinn dictionary.png")
 
 ```{r}
 afinn_sentiments %>%
-  filter(Candidate %in% c("Trump", "Clinton")) %>%
   group_by(Candidate, word, value) %>%
   count(word) %>%
   mutate(impact = value * n) %>%
@@ -606,7 +606,7 @@ afinn_sentiments %>%
   coord_flip() +
   scale_x_reordered() +
   facet_wrap(~ Candidate, scales = "free") +
-  ggtitle("Figure 8: Most Strongly Empahsized Negative Words \nAmerican Candidates") +
+  ggtitle("Figure 8: Most Strongly Empahsized Negative Words by Candidate") +
   theme_light() +
   theme(panel.grid.minor = element_blank(),
         panel.grid.major.y = element_blank(),
@@ -691,14 +691,19 @@ afinn_sentiments %>%
   ungroup() %>%
   mutate(word = reorder_within(word, impact, Candidate)) %>%
   ggplot(aes(word, impact, fill = Candidate)) +
-  geom_col() +
-  xlab(NULL) +
+  geom_col(show.legend = FALSE) +
   coord_flip() +
+  labs(x = "", y = "Impact", title = "Most Strongly Emphasized Words by Candidate") +
   scale_x_reordered() +
   facet_wrap(~ Candidate, scales = "free") +
-  ggtitle("Most Impactful Words by Candidate")
+  theme_light() +
+  theme(panel.grid.minor = element_blank(),
+        panel.grid.major.y = element_blank(),
+        plot.title = element_text(face = "bold", size = 14, hjust = 0.5),
+        plot.caption = element_text(size = 11, hjust = 0.5),
+        axis.ticks = element_blank()) 
 
-# ggsave("afinn most impactful.png")
+# ggsave("most impactful.pdf")
 ```
 
 ```{r}
@@ -819,9 +824,6 @@ ggsave("hashtags_original.png")
 ## Topic Model
 
 ```{r}
-library(stm)
-library(quanteda)
-
 set.seed(2020)
 
 word_counts <- tweets %>%
@@ -833,7 +835,7 @@ word_counts <- tweets %>%
          str_detect(word, "[a-z]"),
          !str_detect(word, "[:digit:]"),
          !str_detect(word, "u0080"),
-         !str_detect(word, "http")) %>%
+         !str_detect(word, "http|pictwitter")) %>%
   count(tweet_id, word, sort = TRUE) 
 
 tweet_dfm <- word_counts %>%
@@ -841,12 +843,12 @@ tweet_dfm <- word_counts %>%
 ```
 
 ```{r}
-topic_model_4 <- stm(tweet_dfm, K = 4, init.type = "Spectral")
-topic_model_6 <- stm(tweet_dfm, K = 6, init.type = "Spectral")
+# topic_model_4 <- stm(tweet_dfm, K = 4, init.type = "Spectral")
+# topic_model_6 <- stm(tweet_dfm, K = 6, init.type = "Spectral")
 topic_model_12 <- stm(tweet_dfm, K = 12, init.type = "Spectral")
-topic_model_16 <- stm(tweet_dfm, K = 16, init.type = "Spectral")
-topic_model_20 <- stm(tweet_dfm, K = 20, init.type = "Spectral")
-topic_model_24 <- stm(tweet_dfm, K = 24, init.type = "Spectral")
+# topic_model_16 <- stm(tweet_dfm, K = 16, init.type = "Spectral")
+# topic_model_20 <- stm(tweet_dfm, K = 20, init.type = "Spectral")
+# topic_model_24 <- stm(tweet_dfm, K = 24, init.type = "Spectral")
 ```
 
 
@@ -874,12 +876,12 @@ beta_eval <- function(topicModel) {
 6 topic model: nothing of interest
 12 topic model: this seems to be doing better. The first topic seems primarily about US election (similar to topics 3, 6, 8). Second topic about somewhat about taxes. Topic 7 appears to be about debates and VPs. Really interested in topic 12 which seems more focused on issues (especially family, trust, etc).
 ```{r}
-beta_eval(topic_model_4)
-beta_eval(topic_model_6) 
+# beta_eval(topic_model_4)
+# beta_eval(topic_model_6) 
 beta_eval(topic_model_12)
-beta_eval(topic_model_16)
-beta_eval(topic_model_20)
-beta_eval(topic_model_24)
+# beta_eval(topic_model_16)
+# beta_eval(topic_model_20)
+# beta_eval(topic_model_24)
 ```
 
 ### Gamma evaluation
@@ -896,16 +898,115 @@ gamma_eval <- function(topicModel) {
 
   }
 
-gamma_eval(topic_model_4)
-gamma_eval(topic_model_6)
+# gamma_eval(topic_model_4)
+# gamma_eval(topic_model_6)
 gamma_eval(topic_model_12)
-gamma_eval(topic_model_16)
-gamma_eval(topic_model_20)
-gamma_eval(topic_model_24)
+# gamma_eval(topic_model_16)
+# gamma_eval(topic_model_20)
+# gamma_eval(topic_model_24)
 ```
 
 #### Next Steps
 
 1. Use the functions to figure out which model performs the best (probably using the gamma distribution then using the beta). 
-2. Once a model has been decided, you need to create a graphic or table that shows the words have the largest (and maybe smallest) betas for each topic. Try to define them in simple terms.
+
+2. Show the beta distributions of the words that best/least fit.
+```{r}
+topic_model_12 %>%
+  tidy(matrix = "beta") %>%
+  group_by(topic) %>%
+  top_n(10, beta) %>%
+  ungroup() %>%
+  mutate(term = reorder_within(term, beta, topic)) %>%
+  ggplot(aes(x = term, y = beta, fill = factor(topic))) +
+  geom_col(show.legend = FALSE) +
+  coord_flip() +
+  scale_x_reordered() +
+  facet_wrap(~topic, scales = "free") +
+  labs(y = "Probability of the Word Generating from each Topic", x = "",
+       title = "Words that Best Fit in each Topic") +
+  theme_light() +
+  theme(panel.grid.minor = element_blank(),
+        panel.grid.major.y = element_blank(),
+        plot.title = element_text(face = "bold", size = 14, hjust = 0.5),
+        plot.caption = element_text(size = 11, hjust = 0.5),
+        axis.ticks = element_blank())
+
+## This graph isn't teaching us a lot.
+topic_model_12 %>%
+  tidy(matrix = "beta") %>%
+  group_by(topic) %>%
+  top_n(10, -beta) %>%
+  ungroup() %>%
+  mutate(term = reorder_within(term, beta, topic)) %>%
+  ggplot(aes(x = term, y = beta, fill = factor(topic))) +
+  geom_col(show.legend = FALSE) +
+  coord_flip() +
+  scale_x_reordered() +
+  facet_wrap(~topic, scales = "free") +
+  labs(y = "Probability of the Word Generating from each Topic", x = "",
+       title = "Words that Least Fit in each Topic") +
+  theme_light() +
+  theme(panel.grid.minor = element_blank(),
+        panel.grid.major.y = element_blank(),
+        plot.title = element_text(face = "bold", size = 14, hjust = 0.5),
+        plot.caption = element_text(size = 11, hjust = 0.5),
+        axis.ticks = element_blank())
+
+ggsave("topic_model_beta.png")
+```
+
+
 3. Then use the gamma distribution to give a probability that a given tweet fits within a topic. Do either a mean and make a point estimate for each candidate per topic and then plot each one (the topic on the y axis, the score on the x, and color for the candidate). You can do that, or instead of computing a mean/median, you could do a boxplot for each candidate.  
+
+```{r}
+gamma_12 <- topic_model_12 %>%
+  tidy(matrix = "gamma")
+
+
+tweet_id <- tweets %>%
+  mutate(tweet_id = row_number()) %>%
+  mutate(text = str_remove_all(Tweet, remove_reg)) %>%
+  unnest_tokens(word, text, token = "tweets") %>%
+  filter(!word %in% stop_words$word,
+         !word %in% str_remove_all(stop_words$word, "'"),
+         str_detect(word, "[a-z]"),
+         !str_detect(word, "[:digit:]"),
+         !str_detect(word, "u0080"),
+         !str_detect(word, "http|pictwitter")) %>%
+  select(tweet_id, Candidate) %>%
+  distinct(tweet_id, .keep_all = TRUE)
+
+# tweet_id %>%
+#   left_join(gamma_12, by = c("tweet_id" = "document")) %>%
+#   filter(!is.na(topic)) %>%
+#   mutate(topic = factor(topic)) %>%
+#   ggplot(aes(x = topic, y = gamma, fill = Candidate)) +
+#   geom_boxplot() +
+#   coord_flip()
+
+tweet_id %>%
+  left_join(gamma_12, by = c("tweet_id" = "document")) %>%
+  filter(!is.na(topic)) %>%
+  group_by(topic, Candidate) %>%
+  summarise(mean_gamma = mean(gamma, na.rm = TRUE),
+            sd_gamma = sd(gamma, na.rm = TRUE)) %>%
+  ungroup() %>%
+  mutate(topic = as.factor(topic)) %>%
+  ggplot(aes(x = mean_gamma, y = topic, color = Candidate)) +
+  # geom_jitter(width = 0) +
+  labs(x = "Average Gamma by Topic", y = "Topic",
+       title = "Average Gamma of Candidates' Tweets by Topic") +
+  geom_point(alpha = 0.5) +
+  theme_light() +
+  theme(panel.grid.minor = element_blank(),
+        panel.grid.major.y = element_blank(),
+        plot.title = element_text(face = "bold", size = 14, hjust = 0.5),
+        plot.caption = element_text(size = 11, hjust = 0.5),
+        axis.ticks = element_blank()) +
+  scale_x_continuous(labels = scales::percent_format(accuracy = 1))
+
+ggsave("topic_model_gamma.png")
+```
+
+
