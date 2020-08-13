@@ -602,11 +602,11 @@ afinn_sentiments %>%
   ggplot(aes(word, impact, fill = Candidate)) +
   geom_col(show.legend = FALSE) +
   xlab(NULL) +
-  labs(y = "Impact") +
+  labs(y = "") +
   coord_flip() +
   scale_x_reordered() +
   facet_wrap(~ Candidate, scales = "free") +
-  ggtitle("Figure 8: Most Strongly Empahsized Negative Words by Candidate") +
+  ggtitle("Most Strongly Emphasized Negative Words by Candidate") +
   theme_light() +
   theme(panel.grid.minor = element_blank(),
         panel.grid.major.y = element_blank(),
@@ -693,7 +693,7 @@ afinn_sentiments %>%
   ggplot(aes(word, impact, fill = Candidate)) +
   geom_col(show.legend = FALSE) +
   coord_flip() +
-  labs(x = "", y = "Impact", title = "Most Strongly Emphasized Words by Candidate") +
+  labs(x = "", y = "", title = "Most Strongly Emphasized Words by Candidate") +
   scale_x_reordered() +
   facet_wrap(~ Candidate, scales = "free") +
   theme_light() +
